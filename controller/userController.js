@@ -1,43 +1,96 @@
-let users = [
-    {id:1,name:"shishir"},
-    {id:2,name:"Pooja"},
-    {id:3,name:"Amit"}
-]
+const bcrypt = require("bcrypt");
+const User = require("../models/userModel");
 
-const getUser = async (req,res)=>{
+const getUser = async (req, res) => {
     try {
-        res.status(200).send(users);
+        const users = await User.find();
+        res.status(200).send({
+            message: "Record list",
+            users: users
+        });
     } catch (error) {
         console.log(error)
     }
 }
 
 
-const adduser = async (req,res)=>{
+const adduser = async (req, res) => {
     try {
-        const user = req.body;
-        users.push(user);
-        res.status(200).send('New User added',users);
+        const { name, email, password, age, city } = req.body;
+        const hasedpassword = await bcrypt.hash(password, 12);
+        const obj = new User({
+            name,
+            email,
+            password: hasedpassword,
+            age,
+            city
+        });
+
+        await obj.save();
+
+        res.status(200).json({
+            message: "User created",
+            data: obj
+        });
     } catch (error) {
         console.log(error)
     }
 }
 
-const getUserById = async (req,res)=>{
-    const id = Number(req.params.id);
+const getUserById = async (req, res) => {
+    const id = req.params.id;
     try {
-        const user = await users.filter(user=>user.id===id);
-        res.status(200).send(user);
+        const user = await User.findById(id);
+        res.status(200).send({
+            message: "Data found",
+            user: user
+        });
     } catch (error) {
         console.log(error)
     }
 }
 
-const deleteUser = async (req,res)=>{
-    const id = Number(req.params.id);
+const deleteUser = async (req, res) => {
+    const id = req.params.id;
     try {
-        const user = await users.filter(user=>user.id!=id);
-        res.status(200).send(user);
+        const user = await User.findByIdAndDelete(id);
+        res.status(200).send({
+            message: "Data found",
+            user: user
+        });
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+
+const updateUser = async (req, res) => {
+    const id = req.params.id;
+
+    const { name, email, password, age, city } = req.body;
+
+    const hasedpassword = await bcrypt.hash(password, 12);
+
+    const obj = {
+        name,
+        email,
+        password: hasedpassword,
+        age,
+        city
+    };
+    try {
+
+        const user = await User.findByIdAndUpdate(
+            id,
+            {
+                $set: obj
+            },
+            { new: true }
+        );
+        res.status(200).send({
+            message: "Record update successfully",
+            user: user
+        });
     } catch (error) {
         console.log(error)
     }
@@ -48,6 +101,6 @@ module.exports = {
     getUser,
     adduser,
     getUserById,
-    deleteUser
-
+    deleteUser,
+    updateUser
 }
